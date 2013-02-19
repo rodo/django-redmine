@@ -85,6 +85,19 @@ class RedmineProject(RedmineResource):
         """
         RedmineResource.__init__(self, None, project, 'project')
 
+
+class RedmineTracker(RedmineResource):
+    def __init__(self, tracker = None):
+        """
+        Redmine tracker representation, tied to the API XML form.
+
+        >>> r = RedmineTracker(None)
+        >>> r.to_xml()
+        '<?xml version="1.0" ?><tracker/>'
+        """
+        RedmineResource.__init__(self, None, tracker, 'tracker')
+
+
 class RedmineIssue(RedmineResource):
     def __init__(self, issue = None):
         """
@@ -115,6 +128,29 @@ class RedmineClient:
         self.http = httplib2.Http()
         self.http.add_credentials(user, password)
         self.key = key
+
+    # ---- Trackers ----
+
+    def get_trackers(self):
+        """
+        Get a [list] of all trackers
+        GET $base/trackers.xml
+        http://www.redmine.org/projects/redmine/wiki/Rest_Trackers
+        Warning Tracker are considerated as alpha version and available since Redmine 1.3
+
+        >>> r = RedmineClient('http://redmine.example.com', 'test_username', 'test_password', 'test_key')
+        >>> p = r.get_trackers()
+        >>> len(p) > 0
+        True
+        """
+        url = "%s/trackers.xml?key=%s" % (self.base, self.key)
+        response, content = self.http.request(url, "GET")
+        trackers = []
+        trackersRoot = minidom.parseString(content)
+        trackersList = trackersRoot.documentElement.getElementsByTagName('tracker')
+        for tracker in trackersList:
+            trackers.append(RedmineTracker(tracker))
+        return trackers
 
     # ---- Projects ----
 
